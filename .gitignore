@@ -1,0 +1,6 @@
+venv/
+build/
+dist/
+*.spec
+*.ico
+pitch_detector(*

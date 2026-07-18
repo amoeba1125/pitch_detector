@@ -15,7 +15,8 @@ MIN_PITCH = 30
 MAX_PITCH = 90
 
 def freq_to_note(freq):
-    if freq == 0: return None
+    if freq == 0: 
+        return None
     note_num = 69 + 12 * np.log2(freq / 440.0)
     return int(round(note_num))
 
@@ -95,6 +96,7 @@ def run_visualizer(midi_file = ""):
     text = "github.com/amoeba1125"
     text_surface = font.render(text, True, (110, 110, 110))
     text_rect = text_surface.get_rect()
+    pitch_offset = 0
 
     clock = pygame.time.Clock()
 
@@ -127,6 +129,12 @@ def run_visualizer(midi_file = ""):
         current_time = time.time() - start_time
 
         for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    pitch_offset += 12
+
+                elif event.key == pygame.K_DOWN:
+                    pitch_offset -= 12
             if event.type == pygame.QUIT:
                 running = False
 
@@ -145,7 +153,7 @@ def run_visualizer(midi_file = ""):
                 pygame.draw.rect(screen, (60, 45, 45), pygame.Rect(0, y, screen_width, note_height))
         y = screen_height - (60 - min_pitch + 1) * note_height
         pygame.draw.rect(screen, (90, 45, 45), pygame.Rect(0, y, screen_width, note_height))
-        # current line
+        # current verticle line
         pygame.draw.line(screen, (255, 255, 255), (start_x, 0), (start_x, 400), 1)
 
         # display MIDI notes
@@ -160,15 +168,19 @@ def run_visualizer(midi_file = ""):
                     pygame.draw.rect(screen, (80, 255, 80) if start >= current_time else (255, 255, 80), rect)
 
         # display mic pitch (current)
+        offset_text = font.render(f"Pitch Offset: {pitch_offset:+d}",True,(255,255,255))
+        screen.blit(offset_text, (10,35))
         if mic_pitch:
-            y = screen_height - (mic_pitch - min_pitch + 0.5) * note_height
+            display_pitch = mic_pitch + pitch_offset    # 調整顯示音高
+            y = screen_height - (display_pitch - min_pitch + 0.5) * note_height
             pygame.draw.circle(screen, (255, 80, 80), (200, int(y)), 5)
-            note_text = font.render(f"Mic pitch: {note_num_to_name(round(mic_pitch))}", True, (255, 255, 255))
+            note_text = font.render(f"Mic pitch: {note_num_to_name(round(display_pitch))}", True, (255, 255, 255))
             screen.blit(note_text, (10, 10))
         mic_history.append(y if mic_pitch else None)
+        
         # display mic pitch (history)
         for i in range(len(mic_history) - 1):
-            if mic_history[i] != None and mic_history[i+1] != None :
+            if mic_history[i] is not None and mic_history[i+1] is not None :
                 pygame.draw.line(screen, (200, 70, 70),
                                 (start_x - (len(mic_history) - i) * pixels_per_second / frame_rate, mic_history[i]),
                                 (start_x - (len(mic_history) - i + 1) * pixels_per_second / frame_rate, mic_history[i + 1]), 
